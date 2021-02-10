@@ -35,7 +35,7 @@ Windows自带的的cmd和power shell很丑，可以在Microsoft Store中搜索Wi
 - 输入密码
 - 接下来就可以使用命令行工具进行操作数据库了！
 
-## 二、命令行工具操作数据库
+## 二、基本操作--命令行工具操作数据库
 
 ### 登录MySQL
 
@@ -413,5 +413,503 @@ Rows matched: 1  Changed: 1  Warnings: 0
 | 旺旺财   | 周星驰 | 狗      | 公   | 1999-01-10 | NULL       |
 +----------+--------+---------+------+------------+------------+
 11 rows in set (0.00 sec)
+```
+
+## Mysql建表时的约束
+
+### 主键约束
+
+唯一确定一张表中的一条记录，也就是我们通过给某个字段添加约束，就可以时的该字段**不重复**且**不为空**。
+
+#### 创建单个主键
+
+```mysql
+create table 数据表名 (字段名 字段类型 primary key...)
+```
+
+**输入**
+
+```mysql
+create table user (id int(11) primary key, name varchar(20));
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.04 sec)
+```
+
+插入一组数据：
+
+```mysql
+insert into user values(1,'张三');
+```
+
+之后再插入：
+
+```mysql
+insert into user values(1,'李四');
+```
+
+会报错：
+
+```mysql
+ERROR 1062 (23000): Duplicate entry '1' for key 'PRIMARY'
+```
+
+> 说明`id`这一字段受到主键约束，不有重复的id
+
+尝试再插入如下：
+
+```mysql
+insert into user values(2,'张三');
+```
+
+返回如下，成功插入：
+
+```mysql
+Query OK, 1 row affected (0.00 sec)
+```
+
+> 说明`name`并不受到主键约束，可以重复
+
+然后尝试插入如下：
+
+```mysql
+insert into user values(NULL,'张三');
+```
+
+报错如下：
+
+```mysql
+ERROR 1048 (23000): Column 'id' cannot be null
+```
+
+> 说明`id`受到主键约束，不能为空
+
+#### 组合主键
+
+> 组合主键
+
+```
+create table 数据表名 (字段名 字符类型...primary key(字段名1...))
+```
+
+**输入**
+
+```mysql
+create table user2 (id int, name varchar(20), password varchar(20), primary key(id,name));
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.04 sec)
+```
+
+分别尝试如下插入语句：
+
+插入：
+
+```mysql
+insert into user2 values(1, '张三', '123');
+```
+
+返回
+
+```mssql
+Query OK, 1 row affected (0.01 sec)
+```
+
+插入：
+
+```mysql
+insert into user2 values(1, '张三', '123');
+```
+
+返回
+
+```mysql
+ERROR 1062 (23000): Duplicate entry '1-张三' for key 'PRIMARY'
+```
+
+插入
+
+```mysql
+insert into user2 values (2, '张三', '123');
+```
+
+返回
+
+```mysql
+Query OK, 1 row affected (0.00 sec)
+```
+
+又经过一系列尝试，发现受到主键约束的联合主键任何一个字段（`name`和`id`字段）的属性值都不能为NULL
+
+#### 创建表之后给某个字段添加主键约束
+
+##### 修改表结构添加主键
+
+```mysql
+alter table 表格名 add primary key (字段名)
+```
+
+**输入**
+
+```mysql
+alter table user4 add primary key(id);
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+```
+
+查询当前表结构返回如下
+
+```mysql
++-------+----------+------+-----+---------+-------+
+| Field | Type     | Null | Key | Default | Extra |
++-------+----------+------+-----+---------+-------+
+| id    | int(11)  | NO   | PRI | 0       |       |
+| name  | char(20) | YES  |     | NULL    |       |
++-------+----------+------+-----+---------+-------+
+2 rows in set (0.03 sec)
+```
+
+> 可以添加组合主键：`alter table 表格名 add primary key(字段名1, 字段名2...)`
+
+> **Warning**：不可以添加一个主键后又添加一个主键
+>
+> ```mysql
+> alter table user4 add primary key(name);
+> alter table user4 add primary key(id);
+> ```
+>
+> 会报错`ERROR 1068 (42000): Multiple primary key defined`
+
+##### 通过修改字段添加主键
+
+```mysql
+alter table 表格名 modify 字段名 字段类型 primary key;
+```
+
+**输入**
+
+```mysql
+alter table user4 modify id int primary key;
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.09 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+```
+
+#### 删除主键
+
+```mysql
+alter table 表格名 drop primary key;
+```
+
+> 注意：这个语句会删掉表格中所有的主键！
+
+### 自增约束
+
+自增约束和主键约束结合在一起，可以只指定其他字段的属性值，而受到自增约束和主键约束的某个字段会自动生成一个编号
+
+```mysql
+create table 数据表名 (字段名 字段类型... primary key auto_increment)
+```
+
+**输入**
+
+```mysql
+create table user3 (id int primary key auto_increment, name varchar(20));
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.04 sec)
+```
+
+进行如下插入操作
+
+```mysql
+insert into user3 (name) values('张三')；
+insert into user3 (name) values('李四')；
+```
+
+查询当前数据表返回如下
+
+```mysql
++----+------+
+| id | name |
++----+------+
+|  1 | 张三 |
+|  2 | 李四 |
++----+------+
+2 rows in set (0.00 sec)
+```
+
+### 唯一约束
+
+> 约束修饰的字段的值不可以重复
+
+#### 创建表格的时候添加唯一约束
+
+##### 直接在需要添加的字段后面添加`unique`
+
+```mysql
+create table user6 (id int unique, name varchar(20));
+```
+
+> 注意：如果此时在多个字段后都添加`unique`，则不会形成联合的唯一约束，任何一个字段出现重复都会报错。
+
+**查看当前表格**
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  | UNI | NULL    |       |
+| name  | varchar(20) | YES  | UNI | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.03 sec)
+```
+
+**输入**
+
+```mysql
+ insert into user6 values(1,'zhangsan');
+```
+
+**返回**
+
+```mysql
+Query OK, 1 row affected (0.00 sec)
+```
+
+**输入**
+
+```mysql
+insert into user6 values(1,'lisi');
+```
+
+**返回**
+
+```mysql
+ERROR 1062 (23000): Duplicate entry '1' for key 'id'
+```
+
+**输入**
+
+```mysql
+ insert into user6 values(2,'zhangsan');
+```
+
+**返回**
+
+```mysql
+ERROR 1062 (23000): Duplicate entry 'zhangsan' for key 'name'
+```
+
+##### 定义好字段后在最后添加需要唯一约束的字段
+
+> 如果这时候添加多个字段，则为联合的唯一约束，只要这些字段都相同才会报错。
+>
+> 在删除的时候，使用语句`alter table 表格名 drop index 定义的时候出现的第一个字段名`就可以删除掉整个联合唯一约束
+
+```
+create table user7(id int, name varchar(20), unique(id, name));
+```
+
+**查看当前表格**
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  | MUL | NULL    |       |
+| name  | varchar(20) | YES  |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.03 sec)
+```
+
+接下来插入如下语句都不会报错
+
+```mysql
+insert into user7 values(1,'zhangsan');
+insert into user7 values(2,'zhangsan');
+insert into user7 values(1,'lisi');
+```
+
+#### 创建好表格后添加唯一约束
+
+首先创建一个没有任何约束的空表：
+
+```
+create table 数据表名 (字段名 字段类型...);
+```
+
+**输入**
+
+```mysql
+create table user5 (id int, name varchar(20));
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.04 sec)
+```
+
+##### 添加唯一约束
+
+```mysql
+alter table 数据表名 add unique(字段名);
+```
+
+**输入**
+
+```mysql
+alter tabel user5 add unique (name);
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.04 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+```
+
+查询当前表格得到如下
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  |     | NULL    |       |
+| name  | varchar(20) | YES  | UNI | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.02 sec)
+```
+
+进行插入操作如下：
+
+```mysql
+insert into user5 values(1, '张三');
+```
+
+返回
+
+```mysql
+Query OK, 1 row affected (0.01 sec)
+```
+
+再插入
+
+```mysql
+insert into user5 values(1, '张三');
+```
+
+报错如下
+
+```mysql
+ERROR 1062 (23000): Duplicate entry '张三' for key 'name'
+```
+
+##### modify修改字段添加唯一约束
+
+```mysql
+alter table 表格名 modify 字段名 字段类型 unique;
+```
+
+**输入**
+
+```mysql
+alter table user7 modify name varchar(20) unique;、
+```
+
+> 注意：如果在表格中字段name已经出现了重复的名称，那么这个唯一约束是无法添加的！
+
+#### 删除唯一约束
+
+```mysql
+alter table 数据表名 drop index 要删除约束的字段名;
+```
+
+首先查询当前表格的情况，返回如下
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  | UNI | NULL    |       |
+| name  | varchar(20) | YES  | UNI | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.02 sec)
+```
+
+**输入**
+
+```
+alter table user6 drop index id;
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.03 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+```
+
+再次查询该表格返回如下
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  | UNI | NULL    |       |
+| name  | varchar(20) | YES  |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.03 sec)
+```
+
+### 非空约束
+
+修饰的字段不能为空
+
+```mysql
+create table 表格名 (字段名 字段类型...not null);
+```
+
+**输入**
+
+```mysql
+create table user9 (id int, name varchar(20) unique not null);
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.04 sec)
+```
+
+**查看当前表格**
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  |     | NULL    |       |
+| name  | varchar(20) | NO   |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+2 rows in set (0.04 sec)
 ```
 
