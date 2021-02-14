@@ -1,6 +1,6 @@
 [学习视频](https://www.bilibili.com/video/BV1Vt411z7wy?p=8&spm_id_from=pageDriver)
 
-# Learn MySQL
+# MySQL安装、基本操作、建表约束
 
 版本	Windows 10 专业版
 版本号	20H2
@@ -545,6 +545,8 @@ insert into user2 values (2, '张三', '123');
 Query OK, 1 row affected (0.00 sec)
 ```
 
+> 组合主键约束只要保证有一个字段的属性值不同即可。
+
 又经过一系列尝试，发现受到主键约束的联合主键任何一个字段（`name`和`id`字段）的属性值都不能为NULL
 
 #### 创建表之后给某个字段添加主键约束
@@ -833,7 +835,7 @@ alter table 表格名 modify 字段名 字段类型 unique;
 **输入**
 
 ```mysql
-alter table user7 modify name varchar(20) unique;、
+alter table user7 modify name varchar(20) unique;
 ```
 
 > 注意：如果在表格中字段name已经出现了重复的名称，那么这个唯一约束是无法添加的！
@@ -913,3 +915,104 @@ Query OK, 0 rows affected (0.04 sec)
 2 rows in set (0.04 sec)
 ```
 
+### 默认约束
+
+当我们插入字段值的时候，如果没有传值，就会使用默认值
+
+```mysql
+create table 表格名 (字段名 字段类型 default 默认值)
+```
+
+**输入**
+
+```mysql
+create table user10 (
+	id int,
+	name varchar(20),
+	age int default 18);
+```
+
+**返回**
+
+```mysql
+Query OK, 0 rows affected (0.09 sec)
+```
+
+此时使用`describe user10`查看该表格的属性如下
+
+```mysql
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  |     | NULL    |       |
+| name  | varchar(20) | YES  |     | NULL    |       |
+| age   | int(11)     | YES  |     | 10      |       |
++-------+-------------+------+-----+---------+-------+
+3 rows in set (0.05 sec)
+```
+
+可以看出，`age`的默认参数设置为10
+
+执行以下插入操作，只提供`id`和`name`参数：
+
+```mysql
+insert into user10 (id, name) values(1,"ZhangSan");
+```
+
+此时查看表格具体内容为
+
+```mysql
++------+----------+------+
+| id   | name     | age  |
++------+----------+------+
+|    1 | ZhangSan |   10 |
++------+----------+------+
+1 row in set (0.01 sec)
+```
+
+可以看到`age`被设定为默认参数10
+
+### 外键约束
+
+涉及到两个表：父表和子表（主表和副表）
+
+先创建两个表：
+
+```mysql
+create table classes(
+    id int primary key, 
+    name varchar(20)
+);
+
+create table students(
+    id int primary key, 
+    name varchar(20), 
+    class_id int, 
+    foreign key(class_id) references classes(id)
+);
+```
+
+在`students`这个表中，最后一行`foreign key(class_id) references classes(id)`表示`students`的字段`class_id`来自于`classes`中的字段`id`，`class_id`中的值必须在`id`的值之内。
+
+执行以下插入操作都不会报错：
+
+```mysql
+insert into classes values(1,"一班");
+insert into classes values(2,"二班");
+insert into calsses values(3,"三班");
+insert into classes values(4,"四班");
+
+insert into students values(1001,"ZhangSan",1);
+insert into students values(1002,"LiSi", 2);
+insert into students values(1003,"ZhangSan",3);
+insert into students values(1004,"LiSi",4);
+```
+
+但是执行下面的插入操作会报错：
+
+```mysql
+insert into students values(1005,"ZhangSan",5);
+```
+
+> - 因为class_id中的值必须在id的范围中进行选择，5不在id的值之内，因此会报错。主表中没有的数据值在副表中是不可以使用的。
+> - 主表中的记录被副表引用，是不可以被删除的。
