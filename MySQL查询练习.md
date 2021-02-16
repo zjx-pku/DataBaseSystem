@@ -1230,6 +1230,46 @@ select * from score where score.courseNum = (select courses.id from courses wher
 1 row in set (0.00 sec)
 ```
 
-### 假设使用下面的命令创建了 一个grade表
+### 查询所有同学的studentNum, courseNum, grade列
 
-https://www.bilibili.com/video/BV1Vt411z7wy?p=54&spm_id_from=pageDriver
+假设使用下面的命令创建了 一个grade表：
+
+```mysql
+create table grade values(low int(3), upp int(3), grade char(1));
+```
+
+插入数据如下：
+
+```mysql
+insert into grade values(90,100,'A');
+insert into grade values(80,89,'B');
+insert into grade values(70,79,'C');
+insert into grade values(60,69,'D');
+ insert into grade values(0,59,'E');
+```
+
+**输入**
+
+```mysql
+select studentNum, courseNum, grade from score, grade where degree between low and upp;
+```
+
+**返回**
+
+```mysql
++------------+-----------+-------+
+| studentNum | courseNum | grade |
++------------+-----------+-------+
+| 103        | 3-105     | A     |
+| 103        | 3-245     | B     |
+| 103        | 6-166     | B     |
+| 105        | 3-105     | B     |
+| 105        | 3-245     | C     |
+| 105        | 6-166     | C     |
+| 109        | 3-105     | C     |
+| 109        | 3-245     | D     |
+| 109        | 6-166     | B     |
++------------+-----------+-------+
+9 rows in set (0.00 sec)
+```
+
